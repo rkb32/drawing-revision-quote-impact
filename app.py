@@ -51,6 +51,20 @@ def page(body):
     return PAGE.replace("{body}", body)
 
 
+def crop_png_b64(pdf_path, loc, w=260, h=40, dpi=150):
+    """Small image of the text around a change location, or None if there is no location."""
+    if not loc:
+        return None
+    import base64
+    import pymupdf
+    doc = pymupdf.open(pdf_path)
+    pg = doc[loc["page"] - 1]
+    x, y = loc["x"], loc["y"]
+    clip = pymupdf.Rect(max(0, x - 8), max(0, y - 6), min(pg.rect.width, x + w), min(pg.rect.height, y + h))
+    pix = pg.get_pixmap(dpi=dpi, clip=clip)
+    return base64.b64encode(pix.tobytes("png")).decode()
+
+
 @app.get("/")
 def index():
     return page(FORM)
@@ -91,15 +105,35 @@ def run():
         f"<li>{html.escape(v)}: ${a:.2f}</li>" for v, a in s["priced_exposure_by_vendor_usd"].items()
     ) or "<li>No priced rows.</li>"
 
+    crops = []
+    for c in s["changes_with_location"]:
+        old_img = crop_png_b64(paths["old"], c["loc_old"])
+        new_img = crop_png_b64(paths["new"], c["loc_new"])
+        old_tag = f'<img src="data:image/png;base64,{old_img}">' if old_img else "<i>no location (scan)</i>"
+        new_tag = f'<img src="data:image/png;base64,{new_img}">' if new_img else "<i>no location (scan)</i>"
+        crops.append(f"<tr><td>{html.escape(c['field'])}</td><td>{old_tag}</td><td>{new_tag}</td></tr>")
+    crop_table = ("<table><tr><th>Field</th><th>Rev A</th><th>Rev B</th></tr>" + "".join(crops) + "</table>"
+                  if crops else "<p class='note'>No changes to show.</p>")
+
     body = f"""<p class="ok"><b>Done.</b> {s['changes']} change(s). {s['unpriced_rows']} unpriced row(s).</p>
 <div class="box"><b>Priced exposure, one vendor at a time (not added together)</b><ul>{vendors}</ul></div>
+<h3>Where each change is on the sheet</h3>{crop_table}
 <h3>Changes and affected quote rows</h3>
 <table><tr><th>Field</th><th>Old</th><th>New</th><th>Action</th><th>Vendor</th><th>Exposure</th><th>Status</th></tr>{rows}</table>
 <h3 class="warn">UNCHECKED: could not read, not "no change"</h3><ul>{unchecked}</ul>
 <p><a href="/files/{run_id}/impact.xlsx">Download Excel</a> &middot;
 <a href="/files/{run_id}/markup.pdf">Download marked-up PDF</a> &middot;
-<a href="/">Run another</a></p>"""
+<a href="/">Run another</a> &middot;
+<form method="post" action="/delete/{run_id}" style="display:inline"><button type="submit">Delete this run now</button></form></p>"""
     return page(body)
+
+
+@app.post("/delete/<run_id>")
+def delete_run(run_id):
+    if not run_id.isalnum():
+        abort(404)
+    shutil.rmtree(os.path.join(WORK, run_id), ignore_errors=True)
+    return page("<p class='ok'>Deleted. Working files for this run are gone.</p><p><a href='/'>Back</a></p>")
 
 
 @app.get("/files/<run_id>/<name>")

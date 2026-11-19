@@ -32,3 +32,34 @@ class WebForm(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NoNetwork(unittest.TestCase):
+    """The run must succeed with every outbound socket call blocked."""
+
+    def test_run_works_with_network_blocked(self):
+        import socket
+        import tempfile
+        import impact
+
+        def blocked(*a, **k):
+            raise OSError("network blocked by test")
+
+        S = os.path.join(HERE, "samples")
+        orig = (socket.socket.connect, socket.create_connection, socket.getaddrinfo)
+        socket.socket.connect = blocked
+        socket.create_connection = blocked
+        socket.getaddrinfo = blocked
+        try:
+            with tempfile.TemporaryDirectory() as d:
+                s = impact.run(os.path.join(S, "drawing_revA.pdf"), os.path.join(S, "drawing_revB.pdf"),
+                               os.path.join(S, "bom.csv"), os.path.join(S, "quotes.csv"), "1234-STD", d)
+            self.assertEqual(s["changes"], 3)
+            # OCR path (scanned sheet) also runs with the network blocked
+            with tempfile.TemporaryDirectory() as d:
+                s2 = impact.run(os.path.join(HERE, "samples_scan", "scan_revB.pdf"),
+                                os.path.join(S, "drawing_revA.pdf"),
+                                os.path.join(S, "bom.csv"), os.path.join(S, "quotes.csv"), "1234-STD", d)
+            self.assertTrue(s2["changes"] >= 1)
+        finally:
+            socket.socket.connect, socket.create_connection, socket.getaddrinfo = orig

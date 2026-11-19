@@ -140,7 +140,7 @@ def diff(a: Extract, b: Extract):
     changes, unchecked = [], []
     for name, spec in RULES["fields"].items():
         sa, sb = a.status[name], b.status[name]
-        if sa != "FOUND" or sb != "FOUND":
+        if not (sa.startswith("FOUND") and sb.startswith("FOUND")):
             unchecked.append({"field": name, "rev_A": sa, "rev_B": sb})
             continue
         if a.values[name] != b.values[name]:  # values are normalized (lowercase, single spaces)
