@@ -1,0 +1,88 @@
+{
+  "fields": {
+    "stud_len": {
+      "pattern": "Stud[ _]length:?\\s*([^\\n]+)",
+      "action": "Requote",
+      "reason": "Stud length changes the part, so vendor price basis changes."
+    },
+    "thread": {
+      "pattern": "Thread:?\\s*([^\\n]+)",
+      "action": "Requote",
+      "reason": "Thread size or series change needs new taps or dies and changes the stud price basis."
+    },
+    "material": {
+      "pattern": "Material:?\\s+([^\\n]+)",
+      "action": "Requote",
+      "reason": "Material change (e.g. A193 B7 -> A320 L7 low-temp) changes price and lead time, needs new mill certs and impact test, and may change nut/washer spec. Check nuts, washers and certs too."
+    },
+    "spec_note": {
+      "pattern": "STUDS PER SPEC\\s*([^,\\n]+),",
+      "action": "Requote",
+      "reason": "Spec note change (general note) can change material, certs and test requirements even when the title block does not change."
+    },
+    "holes": {
+      "pattern": "Hole[ _]count:?\\s*(\\d+)",
+      "action": "Requote",
+      "reason": "Hole count change means a new bolt circle, so stud quantity (holes x joints), machining and fit change. Check stud quantity and mating parts."
+    },
+    "qty": {
+      "pattern": "Quantity(?: per assembly)?:?\\s*(\\d+)",
+      "action": "Requote",
+      "reason": "Quantity change moves the price break."
+    },
+    "diameter": {
+      "pattern": "Diameter:?\\s*([^\n]+)",
+      "action": "Requote",
+      "reason": "Stud diameter change means different stock and thread tooling."
+    },
+    "nut": {
+      "pattern": "(A194\\s*(?:Gr(?:ade)?\\.?\\s*)?[0-9A-Z]+)",
+      "action": "Requote",
+      "reason": "Nut grade must match the stud spec. A nut change can need a new cert and price."
+    },
+    "coating": {
+      "pattern": "COATING:?\\s*([^\n]+)",
+      "action": "Requote",
+      "reason": "Coating change (zinc, PTFE) changes process and price."
+    },
+    "nace": {
+      "pattern": "(NACE\\s*MR0175[^\n]*)",
+      "action": "Engineering review",
+      "reason": "NACE hardness requirement added or removed. Engineering must confirm sour-service compliance.",
+      "absent_ok": true
+    },
+    "tolerance": {
+      "pattern": "(?:±|\\+/-)\\s*[0-9.]+",
+      "action": "Engineering review",
+      "reason": "Tolerance tokens changed. Tighter tolerance can fail inspection and needs engineering review.",
+      "findall": true
+    },
+    "gdt": {
+      "pattern": "(?:TRUE POSITION|POSITION|FLATNESS|PERPENDICULARITY|PARALLELISM|CONCENTRICITY|RUNOUT|[⌖⊥⌀⏤∥⌓◎⌭⫽∠⌯⏥⌒])\\s*(?:Ø|DIA\\.?)?\\s*[0-9.]+",
+      "action": "Engineering review",
+      "reason": "Geometric tolerance (position, flatness, etc.) changed. Tighter value can fail inspection.",
+      "findall": true,
+      "absent_ok": true
+    },
+    "general_tol": {
+      "pattern": "UNLESS OTHERWISE SPECIFIED[^\n]*?(\\d+\\.\\d+)",
+      "action": "Engineering review",
+      "reason": "General tolerance block changed. It applies to every dimension without its own tolerance.",
+      "absent_ok": true
+    }
+  },
+  "priced_actions": [
+    "Requote"
+  ],
+  "block_keywords": {
+    "length": "stud_len",
+    "thread": "thread",
+    "material": "material",
+    "spec": "spec_note",
+    "hole": "holes",
+    "quantity": "qty",
+    "position": "gdt",
+    "tolerance": "gdt",
+    "flatness": "gdt"
+  }
+}

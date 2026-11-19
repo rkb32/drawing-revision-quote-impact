@@ -1,0 +1,11 @@
+line,description,qty,part_no,uom
+BOM-001,Stud,24,1234-STD,EA
+BOM-002,Nut,48,NUT-500,EA
+BOM-003,Washer,48,WSH-500,EA
+BOM-004,Base plate,1,BP-200,EA
+BOM-005,Gasket,2,GSK-110,EA
+BOM-006,Bolt,12,BLT-375,EA
+BOM-007,Bracket,4,BRK-040,EA
+BOM-008,Spacer,8,SPC-020,EA
+BOM-009,Label,1,LBL-001,EA
+BOM-010,Packing,1,PKG-100,EA
