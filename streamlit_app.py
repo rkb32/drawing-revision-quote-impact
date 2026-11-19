@@ -43,13 +43,39 @@ def run_on(paths, part):
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
             z.writestr("summary.txt", "\n".join(summary) + "\n")
-            for name in ("impact.xlsx", "markup.pdf", "change_order_draft.md", "drafts.md"):
+            for name in ("impact.xlsx", "markup.pdf", "change_order_draft.md", "drafts.md", "summary.json"):
                 p = os.path.join(out, name)
                 if os.path.exists(p):
                     z.write(p, name)
         return s, buf.getvalue()
     finally:
         shutil.rmtree(work, ignore_errors=True)
+
+
+def show_extra(s):
+    """Items the CLI prints or writes to summary.json that the first version did not show."""
+    st.subheader("Change locations")
+    locs = [{"field": c["field"], "old": c["old"], "new": c["new"], "location on new drawing": c["loc_new"]}
+            for c in s["changes_with_location"]]
+    st.dataframe(locs) if locs else st.write("No changes found.")
+
+    st.subheader("Quote expiry")
+    st.write(s["expiry_flags"] or "No expiry problems for this part.")
+
+    st.subheader("Revision block cross-check")
+    st.write(s["revision_block_cross_check"] or "Revision block agrees with the detected changes.")
+
+    st.subheader("Text changes outside the priced fields")
+    st.write(f"Words only on old drawing: {len(s['text_words_removed'])}. "
+             f"Words only on new drawing: {len(s['text_words_added'])}.")
+    if s["text_words_added"] or s["text_words_removed"]:
+        st.dataframe([{"side": "old only", **w} for w in s["text_words_removed"][:200]]
+                     + [{"side": "new only", **w} for w in s["text_words_added"][:200]])
+        st.caption("First 200 of each shown here. The full list is in summary.json in the zip.")
+
+    st.subheader("Drawing overlay check")
+    st.write(f"Regions highlighted on the marked-up PDF: {s['raster_boxes']}. "
+             f"Alignment shift: {s['raster_shift_px']} px.")
 
 
 tab_up, tab_sample = st.tabs(["Run on my files", "Try with sample files"])
@@ -81,6 +107,7 @@ with tab_up:
                       for r in s["rows"]])
         st.subheader("UNCHECKED (could not read, NOT 'no change')")
         st.write(s["unchecked_fields"] or "None. Every field was read on both drawings.")
+        show_extra(s)
         st.download_button("Download results (zip)", zbytes, "revision_impact_results.zip", "application/zip")
 
 with tab_sample:
@@ -92,4 +119,5 @@ with tab_sample:
         st.success(f"Done. {s['changes']} change(s), {s['unpriced_rows']} unpriced row(s).")
         st.dataframe([{k: r[k] for k in ("field", "old", "new", "action", "vendor", "exposure_usd", "status")}
                       for r in s["rows"]])
+        show_extra(s)
         st.download_button("Download sample results (zip)", zbytes, "sample_results.zip", "application/zip")
