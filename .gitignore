@@ -5,10 +5,8 @@ repos_private/
 out/
 out_*/
 step_test/
-samples_gdt_sym/
 dxf_pairs/
 real_layout_ksc/
-samples_scan/
 __pycache__/
 *.pyc
 _ocr_tmp.png
