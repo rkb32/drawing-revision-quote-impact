@@ -58,11 +58,13 @@ def _run_and_zip(paths, part):
         summary += [f"  {v}: ${a:.2f}" for v, a in s["priced_exposure_by_vendor_usd"].items()]
         summary += ["", "UNCHECKED (could not read on one side, NOT 'no change'):"]
         summary += [f"  {u['field']}: rev A {u['rev_A']}, rev B {u['rev_B']}" for u in s["unchecked_fields"]] or ["  none"]
+        summary += ["", "Revision check (quote vs new drawing revision):"]
+        summary += [f"  {g['vendor']}: {g['status']} ({g['detail']})" for g in s["rev_guard"]] or ["  none"]
         summary += ["", "Policy: " + POLICY]
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
             z.writestr("summary.txt", "\n".join(summary) + "\n")
-            for name in ("impact.xlsx", "markup.pdf", "change_order_draft.md", "drafts.md"):
+            for name in ("impact.xlsx", "markup.pdf", "overlay.png", "change_order_draft.md", "drafts.md", "summary.json"):
                 p = os.path.join(out, name)
                 if os.path.exists(p):
                     z.write(p, name)
