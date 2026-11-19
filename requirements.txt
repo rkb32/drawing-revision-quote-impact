@@ -8,3 +8,4 @@ reportlab==5.1.0
 rapidocr-onnxruntime==1.2.3
 gunicorn==27.0.1
 streamlit==1.67.0
+ezdxf==1.4.5

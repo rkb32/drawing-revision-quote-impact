@@ -135,6 +135,55 @@ def cross_check(changes, a_path, b_path):
     return out
 
 
+def latest_rev(pdf_path):
+    """Highest revision letter in the revision block, or None if no block was read."""
+    revs = revision_block(pdf_path)
+    return max(revs) if revs else None
+
+
+def rev_guard(quote_rows, part_no, new_pdf):
+    """Flags quote lines that are not on the revision of the new drawing.
+    A quote with no 'rev' column is flagged, never passed: we cannot confirm the revision."""
+    current = latest_rev(new_pdf)
+    out = []
+    for q in quote_rows:
+        if q.get("part_no") != part_no:
+            continue
+        vendor = q.get("vendor", "-")
+        if current is None:
+            out.append({"vendor": vendor, "status": "NO REV BLOCK READ",
+                        "detail": "cannot tell which revision the new drawing is"})
+        elif not (q.get("rev") or "").strip():
+            out.append({"vendor": vendor, "status": "QUOTE HAS NO REV",
+                        "detail": f"add a rev column to the quote; new drawing is rev {current}"})
+        elif q["rev"].strip().upper() != current:
+            out.append({"vendor": vendor, "status": "QUOTE ON OLD REV",
+                        "detail": f"quote rev {q['rev'].strip()}, new drawing rev {current}"})
+    return out
+
+
+def write_overlay(pa, pb, out_png, dpi=100):
+    """Colour overlay after alignment: old-only ink red, new-only ink blue, shared ink black."""
+    def render(path):
+        doc = pymupdf.open(path)
+        pix = doc[0].get_pixmap(dpi=dpi, colorspace=pymupdf.csGRAY)
+        return np.frombuffer(pix.samples, np.uint8).reshape(pix.h, pix.w).copy()
+
+    a, b = render(pa), render(pb)
+    h, w = min(a.shape[0], b.shape[0]), min(a.shape[1], b.shape[1])
+    a, b = a[:h, :w], b[:h, :w]
+    (dx, dy), _ = cv2.phaseCorrelate(np.float32(a), np.float32(b))
+    M = np.float32([[1, 0, -round(dx)], [0, 1, -round(dy)]])
+    b = cv2.warpAffine(b, M, (w, h), borderValue=255)
+    ink_a, ink_b = a < 128, b < 128
+    img = np.full((h, w, 3), 255, np.uint8)
+    img[ink_a & ink_b] = (0, 0, 0)
+    img[ink_a & ~ink_b] = (0, 0, 255)   # BGR red: only on old
+    img[ink_b & ~ink_a] = (255, 0, 0)   # BGR blue: only on new
+    cv2.imwrite(out_png, img)
+    return out_png
+
+
 def diff(a: Extract, b: Extract):
     """Return (changes, unchecked). unchecked = fields we could not read on one side."""
     changes, unchecked = [], []
@@ -274,12 +323,14 @@ def run(old_pdf, new_pdf, bom_csv, quotes_csv, part_no, out_dir):
     xcheck = cross_check(changes, old_pdf, new_pdf)
     boxes, shift = raster_regions(old_pdf, new_pdf)
     write_markup(new_pdf, os.path.join(out_dir, "markup.pdf"), boxes)
+    write_overlay(old_pdf, new_pdf, os.path.join(out_dir, "overlay.png"))
     write_xlsx(os.path.join(out_dir, "impact.xlsx"), rows, unchecked, total, len(boxes), shift)
     import words as _words
     removed, added = _words.word_diff(old_pdf, new_pdf)
     import changeorder as _co
     import expiry as _ex
     quote_rows = load_csv(quotes_csv)
+    guard = rev_guard(quote_rows, part_no, new_pdf)
     co_text = _co.build({"rows": rows, "priced_exposure_by_vendor_usd": total,
                          "changes_with_location": [{k: c[k] for k in ("field", "old", "new")} for c in changes]},
                         part_no)
@@ -287,6 +338,8 @@ def run(old_pdf, new_pdf, bom_csv, quotes_csv, part_no, out_dir):
         f.write(co_text)
     summary = {
         "expiry_flags": _ex.check(quote_rows, part_no),
+        "rev_guard": guard,
+        "new_rev": latest_rev(new_pdf),
         "text_words_removed": removed,
         "text_words_added": added,
         "changes": len(changes),

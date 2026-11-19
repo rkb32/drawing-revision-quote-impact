@@ -7,7 +7,7 @@ Exit codes: 0 = all fields read and every change priced or flagged.
 import argparse
 import sys
 
-from impact import run
+from impact import latest_rev, run
 
 
 def main(argv=None):
@@ -19,13 +19,20 @@ def main(argv=None):
     p.add_argument("--part", required=True, help="BOM part number to price")
     p.add_argument("--out", default="out_run")
     p.add_argument("--vendor", default=None, help="show the total for one vendor only")
+    p.add_argument("--history", action="store_true", help="save this run to revisions.sqlite (local only)")
     args = p.parse_args(argv)
     try:
         s = run(args.old_pdf, args.new_pdf, args.bom_csv, args.quotes_csv, args.part, args.out)
     except FileNotFoundError as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 2
+    if args.history:
+        import history
+        history.save(s, args.part, latest_rev(args.old_pdf))
+        print("saved to revisions.sqlite")
     print(f"changes: {s['changes']}  unpriced rows: {s['unpriced_rows']}")
+    for g in s["rev_guard"]:
+        print(f"REV GUARD {g['vendor']}: {g['status']} ({g['detail']})")
     print("priced exposure, one vendor at a time (vendors are not summed):")
     for vendor, amt in s["priced_exposure_by_vendor_usd"].items():
         print(f"  {vendor}: ${amt}")
