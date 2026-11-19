@@ -277,7 +277,16 @@ def run(old_pdf, new_pdf, bom_csv, quotes_csv, part_no, out_dir):
     write_xlsx(os.path.join(out_dir, "impact.xlsx"), rows, unchecked, total, len(boxes), shift)
     import words as _words
     removed, added = _words.word_diff(old_pdf, new_pdf)
+    import changeorder as _co
+    import expiry as _ex
+    quote_rows = load_csv(quotes_csv)
+    co_text = _co.build({"rows": rows, "priced_exposure_by_vendor_usd": total,
+                         "changes_with_location": [{k: c[k] for k in ("field", "old", "new")} for c in changes]},
+                        part_no)
+    with open(os.path.join(out_dir, "change_order_draft.md"), "w", encoding="utf-8") as f:
+        f.write(co_text)
     summary = {
+        "expiry_flags": _ex.check(quote_rows, part_no),
         "text_words_removed": removed,
         "text_words_added": added,
         "changes": len(changes),

@@ -10,3 +10,4 @@ real_layout_ksc/
 __pycache__/
 *.pyc
 _ocr_tmp.png
+decisions.sqlite

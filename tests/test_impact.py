@@ -138,3 +138,41 @@ class VariantLayout(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NewFeatures(unittest.TestCase):
+    def test_change_order_draft_is_unsent_and_per_vendor(self):
+        with tempfile.TemporaryDirectory() as d:
+            impact.run(A, B, BOM, Q, "1234-STD", d)
+            text = open(os.path.join(d, "change_order_draft.md"), encoding="utf-8").read()
+        self.assertIn("NOT SENT", text)
+        self.assertIn("VendorX: $25.20", text)
+        self.assertIn("stud_len", text)
+
+    def test_expiry_flags_quote_expiring_before_lead_time(self):
+        import expiry
+        from datetime import date
+        rows = [{"vendor": "V1", "part_no": "P", "valid_until": "2026-12-01", "lead_time_days": "30"}]
+        flags = expiry.check(rows, "P", today=date(2026, 11, 19))
+        self.assertEqual(flags[0]["status"], "EXPIRES BEFORE LEAD TIME ENDS")
+
+    def test_expiry_no_flag_when_valid_long_enough(self):
+        import expiry
+        from datetime import date
+        rows = [{"vendor": "V1", "part_no": "P", "valid_until": "2026-12-31", "lead_time_days": "10"}]
+        self.assertEqual(expiry.check(rows, "P", today=date(2026, 11, 19)), [])
+
+    def test_learning_suggests_after_enough_decisions(self):
+        import learning
+        import tempfile as tf
+        with tf.TemporaryDirectory() as d:
+            db = os.path.join(d, "t.sqlite")
+            for _ in range(5):
+                learning.log("shopA", "P", "material", "Requote", "hold", path=db)
+            sug = learning.suggestions("shopA", min_n=5, path=db)
+        self.assertEqual(sug[0]["field"], "material")
+
+    def test_learning_rejects_bad_decision(self):
+        import learning
+        with self.assertRaises(ValueError):
+            learning.log("s", "P", "f", "Requote", "maybe", path=os.path.join(tempfile.gettempdir(), "x.sqlite"))
