@@ -67,6 +67,15 @@ def load_file(text, part):
     runs = data.get("runs")
     if not isinstance(runs, list):
         raise ValueError("history file has no runs list")
+    for i, r in enumerate(runs):
+        if not isinstance(r, dict):
+            raise ValueError(f"run {i} is not an object")
+        if not isinstance(r.get("created"), str):
+            raise ValueError(f"run {i} has no created timestamp")
+        if not isinstance(r.get("changes"), list) or not all(isinstance(x, str) for x in r["changes"]):
+            raise ValueError(f"run {i} has a bad changes list")
+        if not isinstance(r.get("exposure_by_vendor"), dict):
+            raise ValueError(f"run {i} has a bad exposure_by_vendor")
     return runs
 
 

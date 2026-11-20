@@ -230,6 +230,8 @@ def render_results(res):
                          + [{"side": "old only", "type": k[0], "layer": k[1], "count": n} for k, n in removed])
         st.caption("A moved entity shows as one removed and one added.")
     st.subheader("Revision history for this part")
+    if res.get("hist_error"):
+        st.error(res["hist_error"])
     runs = res.get("runs") or []
     st.caption("Exposure figures are quote prices. Keep this file with the part's job folder; it is not stored on the server.")
     st.dataframe([{"when": r["created"], "old": r.get("old_rev"), "new": r.get("new_rev"),
@@ -269,21 +271,23 @@ with tab_up:
             s, zbytes, overlay = run_on(paths, part.strip())
             import history as _hist
             runs = []
+            hist_error = None
             if hist_up is not None:
                 try:
-                    runs = _hist.load_file(hist_up.getbuffer().tobytes().decode("utf-8"), part.strip())
+                    runs = _hist.load_file(hist_up.getbuffer().tobytes().decode("utf-8-sig"), part.strip())
                 except (ValueError, UnicodeDecodeError) as e:
-                    st.error(f"History file not used: {e}. Results below are from this run only.")
+                    hist_error = f"History file not used: {e}. Results below are from this run only. No history download is offered, so a corrupt file is not overwritten."
                     runs = []
             runs = runs + [_hist.to_record(s, part.strip(), s.get("old_rev"))]
-            history_text = _hist.dump_file(runs, part.strip())
+            history_text = None if hist_error else _hist.dump_file(runs, part.strip())
         finally:
             shutil.rmtree(work, ignore_errors=True)
         dxf_out = None
         if old_dxf and new_dxf:
             dxf_out = run_dxf(old_dxf.getbuffer().tobytes(), new_dxf.getbuffer().tobytes())
         st.session_state["result"] = {"s": s, "zbytes": zbytes, "overlay": overlay, "dxf": dxf_out,
-                                      "runs": runs, "history_text": history_text, "part": part.strip()}
+                                      "runs": runs, "history_text": history_text, "part": part.strip(),
+                                      "hist_error": hist_error}
         st.session_state["result_source"] = "upload"
     if "result" in st.session_state and st.session_state.get("result_source") == "upload":
         render_results(st.session_state["result"])
@@ -294,7 +298,8 @@ with tab_sample:
         paths = {"old": os.path.join(SAMPLES, "drawing_revA.pdf"), "new": os.path.join(SAMPLES, "drawing_revB.pdf"),
                  "bom": os.path.join(SAMPLES, "bom.csv"), "quotes": os.path.join(SAMPLES, "quotes.csv")}
         s, zbytes, overlay = run_on(paths, "1234-STD")
-        st.session_state["result"] = {"s": s, "zbytes": zbytes, "overlay": overlay, "dxf": None}
+        st.session_state["result"] = {"s": s, "zbytes": zbytes, "overlay": overlay, "dxf": None, "runs": [],
+                                      "history_text": None, "hist_error": None}
         st.session_state["result_source"] = "sample"
     if "result" in st.session_state and st.session_state.get("result_source") == "sample":
         render_results(st.session_state["result"])

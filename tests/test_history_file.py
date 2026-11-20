@@ -34,6 +34,22 @@ class HistoryFile(unittest.TestCase):
         with self.assertRaises(ValueError):
             history.load_file("not json at all", "1234-STD")
 
+    def test_malformed_run_entries_rejected(self):
+        bad_runs = [[{}], [1], ["x"],
+                    [{"created": "t", "changes": "abc", "exposure_by_vendor": {}}],
+                    [{"created": "t", "changes": ["a"], "exposure_by_vendor": []}],
+                    [{"changes": [], "exposure_by_vendor": {}}]]
+        for runs in bad_runs:
+            text = json.dumps({"schema_version": 1, "part": "1234-STD", "runs": runs})
+            with self.subTest(runs=runs), self.assertRaises(ValueError):
+                history.load_file(text, "1234-STD")
+
+    def test_bom_prefixed_text_loads_when_decoded_as_utf8_sig(self):
+        text = history.dump_file([history.to_record(RUN, "1234-STD")], "1234-STD")
+        raw = ("﻿" + text).encode("utf-8")
+        runs = history.load_file(raw.decode("utf-8-sig"), "1234-STD")
+        self.assertEqual(len(runs), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
