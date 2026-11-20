@@ -30,7 +30,9 @@ class OriginalLayout(unittest.TestCase):
         self.assertEqual(sorted(c["field"] for c in changes), ["holes", "material", "stud_len"])
         # thread and spec_note are not on the original layout: UNCHECKED, never "no change"
         self.assertEqual(sorted(u["field"] for u in unchecked),
-                         ["coating", "diameter", "nut", "spec_note", "thread"])
+                         ["coating", "nut", "spec_note", "thread"])
+        # diameter is on both sheets (added to the sample layout) and unchanged
+        self.assertEqual(impact.extract(A).values["diameter"], "1.125 in")
 
     def test_cross_check_clean_on_original(self):
         changes, _ = impact.diff(impact.extract(A), impact.extract(B))

@@ -31,7 +31,7 @@
       "reason": "Quantity change moves the price break."
     },
     "diameter": {
-      "pattern": "Diameter:?\\s*([^\n]+)",
+      "pattern": "(?m)^\\s*Diameter:\\s*([^\n]+)",
       "action": "Requote",
       "reason": "Stud diameter change means different stock and thread tooling."
     },
@@ -69,6 +69,12 @@
       "action": "Engineering review",
       "reason": "General tolerance block changed. It applies to every dimension without its own tolerance.",
       "absent_ok": true
+    },
+    "tubing_grade": {
+      "absent_ok": true,
+      "pattern": "(?m)^[ \\t]*(Grade\\s+[A-D](?:\\s+or\\s+[A-D])?)\\.[^\\n]*\\n[^\\n]*structural\\s+tubing\\s+for\\s+rails\\s+conforming\\s+to\\s+ASTM\\s+A500|structural\\s+tubing\\s+for\\s+rails\\s+conforming\\s+to\\s+ASTM\\s+A500,?\\s+(Grade\\s+[A-D](?:\\s+or\\s+[A-D])?)",
+      "action": "Requote",
+      "reason": "Tube grade allowance changed (ASTM A500 Grade B to Grade B or C). Affects mill certs and supplier options."
     }
   },
   "priced_actions": [
@@ -83,6 +89,7 @@
     "quantity": "qty",
     "position": "gdt",
     "tolerance": "gdt",
-    "flatness": "gdt"
+    "flatness": "gdt",
+    "tubing\\s+grade|A500": "tubing_grade"
   }
 }

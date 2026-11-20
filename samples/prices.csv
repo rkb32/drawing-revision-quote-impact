@@ -1,0 +1,2 @@
+material,usd_per_lb_low,usd_per_lb_high,source
+*,0.775,0.775,"SMU plate average 1,550 USD/short ton as of 10 Nov 2026, divided by 2,000 (converted by hand). Generic plate, not alloy-specific: A193 B7 / A320 L7 premium unverified. Not a quote. Replace with your own table."
