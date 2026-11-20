@@ -35,12 +35,17 @@ def run_on(paths, part):
     work = tempfile.mkdtemp(prefix="revimpact_")
     try:
         out = os.path.join(work, "out")
-        s = impact.run(paths["old"], paths["new"], paths["bom"], paths["quotes"], part, out)
+        s = impact.run(paths["old"], paths["new"], paths["bom"], paths["quotes"], part, out,
+                       prices_csv=paths.get("prices"), heat_certs_csv=paths.get("certs"))
         summary = [f"Changes: {s['changes']}", f"Unpriced rows: {s['unpriced_rows']}",
                    "Priced exposure per vendor (not added together):"]
         summary += [f"  {v}: ${a:.2f}" for v, a in s["priced_exposure_by_vendor_usd"].items()]
         summary += ["", "UNCHECKED (could not read on one side, NOT 'no change'):"]
         summary += [f"  {u['field']}: rev A {u['rev_A']}, rev B {u['rev_B']}" for u in s["unchecked_fields"]] or ["  none"]
+        summary += ["", "Stud length cost (material only):"]
+        summary += [f"  {c.get('status', c)}" for c in s["cost_delta"]] or ["  no stud length change"]
+        hc = s["heat_cert"]
+        summary += ["", "Heat certs: " + (hc if isinstance(hc, str) else ("none" if not hc else ", ".join(f"{r['piece_mark']}={r['status']}" for r in hc)))]
         summary += ["", "Revision check (quote vs new drawing revision):"]
         summary += [f"  {g['vendor']}: {g['status']} ({g['detail']})" for g in s["rev_guard"]] or ["  none"]
         summary += ["", "Policy: " + POLICY]
@@ -60,6 +65,17 @@ def run_on(paths, part):
 
 def show_extra(s, overlay):
     """Items the CLI prints or writes to summary.json that the first version did not show."""
+    st.subheader("Stud length cost (material only, from your price table)")
+    st.dataframe(s["cost_delta"]) if s["cost_delta"] else st.write("No stud length change.")
+    st.subheader("Heat certs (material changes only)")
+    hc = s["heat_cert"]
+    if isinstance(hc, str):
+        st.write(hc)
+    elif hc:
+        st.dataframe(hc)
+    else:
+        st.write("No material change, so no cert check.")
+
     st.subheader("Revision check (quote vs new drawing revision)")
     if s["rev_guard"]:
         st.dataframe(s["rev_guard"])
@@ -113,6 +129,8 @@ with tab_up:
     new = st.file_uploader("New drawing (PDF)", type=["pdf"])
     bom = st.file_uploader("BOM (CSV or XLSX)", type=["csv", "xlsx"])
     quotes = st.file_uploader("Quote sheet (CSV or XLSX)", type=["csv", "xlsx"])
+    prices_up = st.file_uploader("Optional: price table (CSV, for stud length cost)", type=["csv"])
+    certs_up = st.file_uploader("Optional: heat certs (CSV)", type=["csv"])
     part = st.text_input("Part number to price", value="1234-STD")
     old_dxf = st.file_uploader("Optional: old CAD file (DXF)", type=["dxf"])
     new_dxf = st.file_uploader("Optional: new CAD file (DXF)", type=["dxf"])
@@ -120,7 +138,10 @@ with tab_up:
         work = tempfile.mkdtemp(prefix="revimpact_in_")
         try:
             paths = {}
-            for key, f in (("old", old), ("new", new), ("bom", bom), ("quotes", quotes)):
+            for key, f in (("old", old), ("new", new), ("bom", bom), ("quotes", quotes),
+                           ("prices", prices_up), ("certs", certs_up)):
+                if f is None:
+                    continue
                 p = os.path.join(work, f"{key}{os.path.splitext(f.name)[1].lower()}")
                 with open(p, "wb") as fh:
                     fh.write(f.getbuffer())
