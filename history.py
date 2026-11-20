@@ -59,7 +59,9 @@ def to_record(summary, part, old_rev=None):
 
 def load_file(text, part):
     """Parse an uploaded history file. Raises ValueError on wrong schema or a different part."""
-    data = json.loads(text)
+    def _no_nan(const):
+        raise ValueError(f"non-standard JSON constant {const} not allowed")
+    data = json.loads(text, parse_constant=_no_nan)
     if not isinstance(data, dict) or data.get("schema_version") != SCHEMA_VERSION:
         raise ValueError("not a revision-history file (wrong or missing schema_version)")
     if data.get("part") != part:
@@ -76,6 +78,9 @@ def load_file(text, part):
             raise ValueError(f"run {i} has a bad changes list")
         if not isinstance(r.get("exposure_by_vendor"), dict):
             raise ValueError(f"run {i} has a bad exposure_by_vendor")
+        for k in ("old_rev", "new_rev"):
+            if r.get(k) is not None and not isinstance(r.get(k), str):
+                raise ValueError(f"run {i} has a non-text {k}")
     return runs
 
 

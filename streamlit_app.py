@@ -6,6 +6,7 @@ Run locally:  streamlit run streamlit_app.py
 """
 import io
 import os
+import re
 import shutil
 import tempfile
 import zipfile
@@ -276,7 +277,8 @@ with tab_up:
                 try:
                     runs = _hist.load_file(hist_up.getbuffer().tobytes().decode("utf-8-sig"), part.strip())
                 except (ValueError, UnicodeDecodeError) as e:
-                    hist_error = f"History file not used: {e}. Results below are from this run only. No history download is offered, so a corrupt file is not overwritten."
+                    safe = re.sub(r"[^A-Za-z0-9 .,:;'\-()/#]", "?", str(e))
+                    hist_error = f"History file not used: {safe}. Results below are from this run only. No history download is offered, so a corrupt file is not overwritten."
                     runs = []
             runs = runs + [_hist.to_record(s, part.strip(), s.get("old_rev"))]
             history_text = None if hist_error else _hist.dump_file(runs, part.strip())

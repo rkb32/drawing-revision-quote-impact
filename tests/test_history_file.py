@@ -44,6 +44,16 @@ class HistoryFile(unittest.TestCase):
             with self.subTest(runs=runs), self.assertRaises(ValueError):
                 history.load_file(text, "1234-STD")
 
+    def test_nan_and_non_text_revs_rejected(self):
+        base = {"created": "t", "changes": [], "exposure_by_vendor": {}}
+        nan_text = json.dumps({"schema_version": 1, "part": "1234-STD", "runs": [base]}).replace(
+            '"exposure_by_vendor": {}', '"exposure_by_vendor": {"V": NaN}')
+        with self.assertRaises(ValueError):
+            history.load_file(nan_text, "1234-STD")
+        bad_rev = {**base, "old_rev": 7}
+        with self.assertRaises(ValueError):
+            history.load_file(json.dumps({"schema_version": 1, "part": "1234-STD", "runs": [bad_rev]}), "1234-STD")
+
     def test_bom_prefixed_text_loads_when_decoded_as_utf8_sig(self):
         text = history.dump_file([history.to_record(RUN, "1234-STD")], "1234-STD")
         raw = ("﻿" + text).encode("utf-8")
