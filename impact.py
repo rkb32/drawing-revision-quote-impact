@@ -312,9 +312,9 @@ def run(old_pdf, new_pdf, bom_csv, quotes_csv, part_no, out_dir, prices_csv=None
     if prices_csv:
         import cost_delta as _cd
         bom_line = next((r for r in load_csv(bom_csv) if r["part_no"] == part_no), None)
-        qty = int(bom_line["qty"]) if bom_line and str(bom_line["qty"]).strip().isdigit() else None
+        qty = int(bom_line.get("qty", "")) if bom_line and str(bom_line.get("qty", "")).strip().isdigit() else None
         prices = _cd.load_prices(prices_csv)
-        stud_read_any = a.status.get("stud_len") == "FOUND" or b.status.get("stud_len") == "FOUND"
+        stud_read_any = (a.status.get("stud_len") or "").startswith("FOUND") or (b.status.get("stud_len") or "").startswith("FOUND")
         if "stud_len" in {u["field"] for u in unchecked} and stud_read_any:
             cost.append({"field": "stud_len", "status": "unpriced: stud length not read on both sheets"})
         for ch in changes:
