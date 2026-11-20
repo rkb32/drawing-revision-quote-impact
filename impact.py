@@ -82,7 +82,7 @@ def extract(pdf_path):
             continue
         m = re.search(spec["pattern"], text, flags=re.IGNORECASE)
         if m:
-            out.values[name] = " ".join(m.group(1).split()).lower()
+            out.values[name] = " ".join(next((g for g in m.groups() if g), m.group(0)).split()).lower()
             out.status[name] = "FOUND" + suffix
         elif spec.get("absent_ok"):
             out.values[name] = "none"
@@ -314,7 +314,8 @@ def run(old_pdf, new_pdf, bom_csv, quotes_csv, part_no, out_dir, prices_csv=None
         bom_line = next((r for r in load_csv(bom_csv) if r["part_no"] == part_no), None)
         qty = int(bom_line["qty"]) if bom_line and str(bom_line["qty"]).strip().isdigit() else None
         prices = _cd.load_prices(prices_csv)
-        if "stud_len" in {u["field"] for u in unchecked}:
+        stud_read_any = a.status.get("stud_len") == "FOUND" or b.status.get("stud_len") == "FOUND"
+        if "stud_len" in {u["field"] for u in unchecked} and stud_read_any:
             cost.append({"field": "stud_len", "status": "unpriced: stud length not read on both sheets"})
         for ch in changes:
             if ch["field"] == "stud_len":
