@@ -29,7 +29,11 @@ def parse_inches(s):
 
 def load_prices(path):
     with open(path, newline="", encoding="utf-8-sig") as f:
-        return list(csv.DictReader(f))
+        rows = list(csv.DictReader(f))
+    need = {"material", "usd_per_lb_low", "usd_per_lb_high", "source"}
+    if rows and not need <= set(rows[0].keys()):
+        raise ValueError("price file needs columns: " + ", ".join(sorted(need)))
+    return rows
 
 
 def price_range(prices, material):
@@ -41,7 +45,7 @@ def price_range(prices, material):
         try:
             return float(r["usd_per_lb_low"]), float(r["usd_per_lb_high"]), r["source"]
         except (TypeError, ValueError):
-            return None
+            raise ValueError("price row not numeric")
     return None
 
 
@@ -57,7 +61,10 @@ def stud_length_delta(change, bom_qty, diameter_text, prices, material):
         return {"status": "unpriced: stud diameter is zero"}
     if not bom_qty or bom_qty <= 0:
         return {"status": "unpriced: part not in BOM or qty is zero"}
-    pr = price_range(prices, material)
+    try:
+        pr = price_range(prices, material)
+    except ValueError as e:
+        return {"status": "unpriced: " + str(e)}
     if pr is None:
         return {"status": "unpriced: no price row for this material"}
     lo, hi, source = pr

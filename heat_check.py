@@ -9,7 +9,11 @@ import csv
 
 def load_certs(path):
     with open(path, newline="", encoding="utf-8-sig") as f:
-        return list(csv.DictReader(f))
+        rows = list(csv.DictReader(f))
+    need = {"part_no", "piece_mark", "heat_no", "cert_material"}
+    if rows and not need <= set(rows[0].keys()):
+        raise ValueError("cert file needs columns: " + ", ".join(sorted(need)))
+    return rows
 
 
 def check(changes, certs, part_no):
