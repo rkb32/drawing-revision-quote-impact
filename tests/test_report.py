@@ -35,6 +35,20 @@ class ChangeReport(unittest.TestCase):
             self.assertTrue(f.read(4) == b"%PDF")
 
 
+class HostileText(unittest.TestCase):
+    def test_markup_in_drawing_text_does_not_crash_the_pdf(self):
+        tmp = tempfile.mkdtemp(prefix="rep_")
+        s = dict(SUMMARY)
+        s["unchecked_fields"] = [{"field": "<b>x", "rev_A": "<a", "rev_B": "&#xZZ;"}]
+        s["uncovered_text_warning"] = "<font name='Nope'>w"
+        s["rows"] = [{"field": "<b>&", "old": "<para>", "new": "a<br/>b", "action": "Requote",
+                      "vendor": "<a", "qty": "1", "exposure_usd": 1, "status": "priced"}]
+        p = os.path.join(tmp, "r.pdf")
+        report.write_pdf(p, s, "P<a")
+        with open(p, "rb") as f:
+            self.assertEqual(f.read(4), b"%PDF")
+
+
 class History(unittest.TestCase):
     def test_saved_runs_come_back_oldest_first(self):
         tmp = tempfile.mkdtemp(prefix="hist_")

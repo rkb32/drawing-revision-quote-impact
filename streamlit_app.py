@@ -174,6 +174,12 @@ def run_dxf(old_bytes, new_bytes):
         shutil.rmtree(work, ignore_errors=True)
 
 
+def _clear_result():
+    """Any input change makes the stored result stale: drop it so no old numbers stay on screen."""
+    st.session_state.pop("result", None)
+    st.session_state.pop("result_source", None)
+
+
 def render_results(res):
     """Draws a finished run. Called from session state, so results survive reruns (e.g. download clicks)."""
     s, zbytes, overlay, dxf_out = res["s"], res["zbytes"], res["overlay"], res["dxf"]
@@ -229,15 +235,15 @@ def render_results(res):
 tab_up, tab_sample = st.tabs(["Run on my files", "Try with sample files"])
 
 with tab_up:
-    old = st.file_uploader("Old drawing (PDF)", type=["pdf"])
-    new = st.file_uploader("New drawing (PDF)", type=["pdf"])
-    bom = st.file_uploader("BOM (CSV or XLSX)", type=["csv", "xlsx"])
-    quotes = st.file_uploader("Quote sheet (CSV or XLSX)", type=["csv", "xlsx"])
-    prices_up = st.file_uploader("Optional: price table (CSV, for stud length cost)", type=["csv"])
-    certs_up = st.file_uploader("Optional: heat certs (CSV)", type=["csv"])
-    part = st.text_input("Part number to price", value="1234-STD")
-    old_dxf = st.file_uploader("Optional: old CAD file (DXF)", type=["dxf"])
-    new_dxf = st.file_uploader("Optional: new CAD file (DXF)", type=["dxf"])
+    old = st.file_uploader("Old drawing (PDF)", type=["pdf"], on_change=_clear_result)
+    new = st.file_uploader("New drawing (PDF)", type=["pdf"], on_change=_clear_result)
+    bom = st.file_uploader("BOM (CSV or XLSX)", type=["csv", "xlsx"], on_change=_clear_result)
+    quotes = st.file_uploader("Quote sheet (CSV or XLSX)", type=["csv", "xlsx"], on_change=_clear_result)
+    prices_up = st.file_uploader("Optional: price table (CSV, for stud length cost)", type=["csv"], on_change=_clear_result)
+    certs_up = st.file_uploader("Optional: heat certs (CSV)", type=["csv"], on_change=_clear_result)
+    part = st.text_input("Part number to price", value="1234-STD", on_change=_clear_result)
+    old_dxf = st.file_uploader("Optional: old CAD file (DXF)", type=["dxf"], on_change=_clear_result)
+    new_dxf = st.file_uploader("Optional: new CAD file (DXF)", type=["dxf"], on_change=_clear_result)
     if st.button("Run on my files", disabled=not all([old, new, bom, quotes, part.strip()])):
         work = tempfile.mkdtemp(prefix="revimpact_in_")
         try:

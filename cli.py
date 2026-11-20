@@ -12,10 +12,10 @@ from impact import latest_rev, run
 
 def main(argv=None):
     p = argparse.ArgumentParser(description="Drawing revision -> quote impact")
-    p.add_argument("old_pdf")
-    p.add_argument("new_pdf")
-    p.add_argument("bom_csv")
-    p.add_argument("quotes_csv")
+    p.add_argument("old_pdf", nargs="?")
+    p.add_argument("new_pdf", nargs="?")
+    p.add_argument("bom_csv", nargs="?")
+    p.add_argument("quotes_csv", nargs="?")
     p.add_argument("--part", required=True, help="BOM part number to price")
     p.add_argument("--out", default="out_run")
     p.add_argument("--vendor", default=None, help="show the total for one vendor only")
@@ -26,9 +26,14 @@ def main(argv=None):
     args = p.parse_args(argv)
     if args.show_history:
         import history
-        for h in history.history(args.part):
+        runs = history.history(args.part)
+        if not runs:
+            print(f"no saved runs for part {args.part}")
+        for h in runs:
             print(f"{h['created']}  {h['old_rev']} -> {h['new_rev']}  changes: {', '.join(h['changes']) or 'none'}  exposure: {h['exposure_by_vendor']}")
         return 0
+    if not all([args.old_pdf, args.new_pdf, args.bom_csv, args.quotes_csv]):
+        p.error("old_pdf, new_pdf, bom_csv and quotes_csv are required unless --show-history is given")
     try:
         s = run(args.old_pdf, args.new_pdf, args.bom_csv, args.quotes_csv, args.part, args.out,
                 prices_csv=args.prices, heat_certs_csv=args.certs)
