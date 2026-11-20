@@ -387,6 +387,8 @@ def run(old_pdf, new_pdf, bom_csv, quotes_csv, part_no, out_dir, prices_csv=None
     write_markup(new_pdf, os.path.join(out_dir, "markup.pdf"), boxes)
     write_overlay(old_pdf, new_pdf, os.path.join(out_dir, "overlay.png"))
     write_xlsx(os.path.join(out_dir, "impact.xlsx"), rows, unchecked, total, len(boxes), shift)
+    import report as _rep
+    _rep.write_csv(os.path.join(out_dir, "change_report.csv"), rows)
     import words as _words
     removed, added = _words.word_diff(old_pdf, new_pdf)
     import changeorder as _co
@@ -421,6 +423,7 @@ def run(old_pdf, new_pdf, bom_csv, quotes_csv, part_no, out_dir, prices_csv=None
             if removed or added else None),
         "rows": rows,
     }
+    _rep.write_pdf(os.path.join(out_dir, "change_report.pdf"), summary, part_no)
     with open(os.path.join(out_dir, "summary.json"), "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2, default=str)
     return summary

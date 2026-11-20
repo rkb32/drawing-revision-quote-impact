@@ -73,7 +73,8 @@ def _run_and_zip(paths, part):
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
             z.writestr("summary.txt", "\n".join(summary) + "\n")
-            for name in ("impact.xlsx", "markup.pdf", "overlay.png", "change_order_draft.md", "drafts.md", "summary.json"):
+            for name in ("impact.xlsx", "markup.pdf", "overlay.png", "change_order_draft.md", "drafts.md", "summary.json",
+                         "change_report.pdf", "change_report.csv"):
                 p = os.path.join(out, name)
                 if os.path.exists(p):
                     z.write(p, name)

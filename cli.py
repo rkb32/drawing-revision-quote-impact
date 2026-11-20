@@ -21,8 +21,14 @@ def main(argv=None):
     p.add_argument("--vendor", default=None, help="show the total for one vendor only")
     p.add_argument("--prices", default=None, help="price table CSV (material, usd_per_lb_low, usd_per_lb_high, source)")
     p.add_argument("--certs", default=None, help="heat-cert CSV (part_no, piece_mark, heat_no, cert_material)")
+    p.add_argument("--show-history", action="store_true", help="print saved runs for this part (local revisions.sqlite)")
     p.add_argument("--history", action="store_true", help="save this run to revisions.sqlite (local only)")
     args = p.parse_args(argv)
+    if args.show_history:
+        import history
+        for h in history.history(args.part):
+            print(f"{h['created']}  {h['old_rev']} -> {h['new_rev']}  changes: {', '.join(h['changes']) or 'none'}  exposure: {h['exposure_by_vendor']}")
+        return 0
     try:
         s = run(args.old_pdf, args.new_pdf, args.bom_csv, args.quotes_csv, args.part, args.out,
                 prices_csv=args.prices, heat_certs_csv=args.certs)
