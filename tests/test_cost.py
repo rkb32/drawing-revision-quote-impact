@@ -11,6 +11,20 @@ import cost_delta as cd  # noqa: E402
 PRICES = [{"material": "*", "usd_per_lb_low": "0.59", "usd_per_lb_high": "0.63", "source": "test"}]
 
 
+class DiameterRule(unittest.TestCase):
+    def _find(self, text):
+        import re
+        import impact
+        m = re.search(impact.RULES["fields"]["diameter"]["pattern"], text, flags=re.IGNORECASE)
+        return m.group(1).strip() if m else None
+
+    def test_stud_diameter_line_matches(self):
+        self.assertEqual(self._find("Stud length: 5 in\nDiameter: 1.125 in\nMaterial: A320"), "1.125 in")
+
+    def test_pitch_diameter_does_not_match(self):
+        self.assertIsNone(self._find("PITCH DIAMETER: 2.500 in\nBOLT CIRCLE DIAMETER 3.0"))
+
+
 class ParseInches(unittest.TestCase):
     def test_forms(self):
         self.assertAlmostEqual(cd.parse_inches("5.00 in"), 5.0)
