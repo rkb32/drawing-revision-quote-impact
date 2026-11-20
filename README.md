@@ -16,6 +16,8 @@ Give it an old and a new drawing PDF, a BOM, and a vendor quote sheet. It tells 
 
 It does not read mill cert PDFs, price vendor markup or labor, or check that a quote is current.
 
+Out of scope for now: culvert and other quantity-table sheets (the tool cannot read table values by position). Such sheets are flagged for manual review by the uncovered-text warning, never reported as "no change".
+
 ## Run it
 
 Command line:
