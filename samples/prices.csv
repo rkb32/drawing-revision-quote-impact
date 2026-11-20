@@ -1,2 +1,2 @@
 material,usd_per_lb_low,usd_per_lb_high,source
-*,0.59,0.63,"PLACEHOLDER: SMU plate spot range 29 Apr 2026 (1170-1260 USD/short ton), converted to per lb by hand. Not a current price. Replace with your own table."
+*,0.775,0.775,"SMU plate average 1,550 USD/short ton as of 10 Nov 2026, divided by 2,000 (converted by hand). Generic plate, not alloy-specific: A193 B7 / A320 L7 premium unverified. Not a quote. Replace with your own table."
