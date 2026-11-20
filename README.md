@@ -40,7 +40,7 @@ python hosted_app.py
 
 Then open http://127.0.0.1:8080. It accepts optional price and cert CSVs. It keeps no files after it returns results.
 
-Sample page: [site/index.html](site/index.html) (synthetic data).
+Live sample page (synthetic data): https://rkb32.github.io/drawing-revision-quote-impact/
 
 ## Tests
 
