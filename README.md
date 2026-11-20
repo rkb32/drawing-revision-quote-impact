@@ -40,6 +40,15 @@ python hosted_app.py
 
 Then open http://127.0.0.1:8080. It accepts optional price and cert CSVs. It keeps no files after it returns results.
 
+Streamlit version (same checks, same optional price and cert CSVs):
+
+```
+pip install -r requirements.txt
+streamlit run streamlit_app.py
+```
+
+It can be hosted free on Streamlit Community Cloud: point it at this repo, branch `main`, main file `streamlit_app.py`.
+
 Live sample page (synthetic data): https://rkb32.github.io/drawing-revision-quote-impact/
 
 ## Tests
