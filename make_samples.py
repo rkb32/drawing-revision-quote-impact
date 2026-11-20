@@ -9,9 +9,9 @@ OUT = "samples"
 
 REV = {
     "A": {"stud_len": "4.00 in", "material": "A193 B7", "qty": "24", "holes": "8",
-          "date": "2026-11-01"},
+          "diameter": "1.125 in", "date": "2026-11-01"},
     "B": {"stud_len": "5.00 in", "material": "A320 L7", "qty": "24", "holes": "12",
-          "date": "2026-11-15"},
+          "diameter": "1.125 in", "date": "2026-11-15"},
 }
 
 
@@ -29,6 +29,7 @@ def draw(rev, d):
     c.drawString(1.5 * inch, 3.1 * inch, f"Quantity per assembly: {d['qty']}")
     c.drawString(1.5 * inch, 2.8 * inch, f"Material: {d['material']}")
     c.drawString(1.5 * inch, 2.5 * inch, "NOTE 1: Deburr all edges. Finish per spec.")
+    c.drawString(1.5 * inch, 2.2 * inch, f"Diameter: {d['diameter']}")
     # Revision block (table)
     y = 1.6 * inch
     c.setFont("Helvetica-Bold", 10)

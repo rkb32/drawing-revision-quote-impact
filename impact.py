@@ -304,10 +304,25 @@ def write_xlsx(path, rows, unchecked, total, boxes_count, shift):
     wb.save(path)
 
 
-def run(old_pdf, new_pdf, bom_csv, quotes_csv, part_no, out_dir):
+def run(old_pdf, new_pdf, bom_csv, quotes_csv, part_no, out_dir, prices_csv=None):
     os.makedirs(out_dir, exist_ok=True)
     a, b = extract(old_pdf), extract(new_pdf)
     changes, unchecked = diff(a, b)
+    cost = []
+    if prices_csv:
+        import cost_delta as _cd
+        bom_line = next((r for r in load_csv(bom_csv) if r["part_no"] == part_no), None)
+        qty = int(bom_line["qty"]) if bom_line and str(bom_line["qty"]).strip().isdigit() else None
+        prices = _cd.load_prices(prices_csv)
+        if "stud_len" in {u["field"] for u in unchecked}:
+            cost.append({"field": "stud_len", "status": "unpriced: stud length not read on both sheets"})
+        for ch in changes:
+            if ch["field"] == "stud_len":
+                if a.values.get("diameter") != b.values.get("diameter"):
+                    cost.append({"field": "stud_len", "status": "unpriced: diameter changed too (weight change not computed)"})
+                    continue
+                cost.append({"field": "stud_len",
+                             **_cd.stud_length_delta(ch, qty, b.values.get("diameter"), prices, b.values.get("material"))})
     for ch in changes:
         ch["loc_old"] = locate(old_pdf, ch["old"])
         ch["loc_new"] = locate(new_pdf, ch["new"])
@@ -351,6 +366,7 @@ def run(old_pdf, new_pdf, bom_csv, quotes_csv, part_no, out_dir):
         "unpriced_rows": sum(1 for r in rows if r["status"].startswith("unpriced")),
         "raster_boxes": len(boxes),
         "raster_shift_px": shift,
+        "cost_delta": cost,
         "rows": rows,
     }
     with open(os.path.join(out_dir, "summary.json"), "w", encoding="utf-8") as f:
