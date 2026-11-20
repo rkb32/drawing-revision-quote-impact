@@ -67,6 +67,8 @@ def _run_and_zip(paths, part):
         summary += ["", "Heat certs: " + (hc if isinstance(hc, str) else ("none" if not hc else ", ".join(f"{r['piece_mark']}={r['status']}" for r in hc)))]
         summary += ["", "Revision check (quote vs new drawing revision):"]
         summary += [f"  {g['vendor']}: {g['status']} ({g['detail']})" for g in s["rev_guard"]] or ["  none"]
+        if s["uncovered_text_warning"]:
+            summary += ["", "WARNING: " + s["uncovered_text_warning"]]
         summary += ["", "Policy: " + POLICY]
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:

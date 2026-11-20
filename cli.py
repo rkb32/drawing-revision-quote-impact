@@ -41,6 +41,8 @@ def main(argv=None):
         print(f"  {vendor}: ${amt}")
     hc = s["heat_cert"]
     print(f"heat cert: {hc if isinstance(hc, str) else ('none' if not hc else [r['status'] for r in hc])}")
+    if s["uncovered_text_warning"]:
+        print("WARNING: " + s["uncovered_text_warning"])
     print(f"raster boxes: {s['raster_boxes']}  shift px: {s['raster_shift_px']}")
     if args.vendor:
         amt = s["priced_exposure_by_vendor_usd"].get(args.vendor)

@@ -415,6 +415,10 @@ def run(old_pdf, new_pdf, bom_csv, quotes_csv, part_no, out_dir, prices_csv=None
         "raster_shift_px": shift,
         "cost_delta": cost,
         "heat_cert": heat,
+        "uncovered_text_warning": (
+            f"Text differs outside the field rules: {len(removed)} word(s) only on old drawing, "
+            f"{len(added)} only on new. The rules do not cover these; review the sheets by hand."
+            if removed or added else None),
         "rows": rows,
     }
     with open(os.path.join(out_dir, "summary.json"), "w", encoding="utf-8") as f:

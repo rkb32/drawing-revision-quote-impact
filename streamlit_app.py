@@ -76,6 +76,8 @@ def show_extra(s, overlay):
     else:
         st.write("No material change, so no cert check.")
 
+    if s.get("uncovered_text_warning"):
+        st.warning(s["uncovered_text_warning"])
     st.subheader("Revision check (quote vs new drawing revision)")
     if s["rev_guard"]:
         st.dataframe(s["rev_guard"])
