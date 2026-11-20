@@ -291,9 +291,12 @@ def write_xlsx(path, rows, unchecked, total, boxes_count, shift):
     ws = wb.active
     ws.title = "impact"
     ws.append(["field", "old", "new", "action", "vendor", "qty", "unit_usd", "exposure_usd", "status", "reason"])
+    def safe(v):
+        # PDF-derived text starting with a formula character would run as a formula in Excel
+        return "'" + v if isinstance(v, str) and v[:1] in ("=", "+", "-", "@") else v
     for r in rows:
-        ws.append([r["field"], r["old"], r["new"], r["action"], r["vendor"], r["qty"],
-                   r["unit_usd"], r["exposure_usd"], r["status"], r["reason"]])
+        ws.append([safe(x) for x in [r["field"], r["old"], r["new"], r["action"], r["vendor"], r["qty"],
+                   r["unit_usd"], r["exposure_usd"], r["status"], r["reason"]]])
     ws.append([])
     for vendor, amt in total.items():
         ws.append([f"priced_exposure_usd ({vendor}, one vendor only)", amt])
@@ -311,15 +314,25 @@ def run(old_pdf, new_pdf, bom_csv, quotes_csv, part_no, out_dir, prices_csv=None
     import cost_delta as _cd
     bom_line = next((r for r in load_csv(bom_csv) if r["part_no"] == part_no), None)
     qty = int(bom_line.get("qty", "")) if bom_line and str(bom_line.get("qty", "")).strip().isdigit() else None
-    prices = _cd.load_prices(prices_csv) if prices_csv else None
+    price_error = None
+    try:
+        prices = _cd.load_prices(prices_csv) if prices_csv else None
+    except (OSError, UnicodeDecodeError, ValueError, csv.Error) as e:
+        prices, price_error = None, str(e)
     cost = []
     # Every cost outcome is a row, never silent: unread, no price table, or priced.
     if "stud_len" in {u["field"] for u in unchecked}:
-        cost.append({"field": "stud_len", "status": "unpriced: stud length not read on both sheets"})
+        cost.append({"field": "stud_len", "status": "unpriced: stud length not read on one or both sheets"})
     for ch in changes:
         if ch["field"] == "stud_len":
+            if price_error:
+                cost.append({"field": "stud_len", "status": "unpriced: price file unreadable (" + price_error + ")"})
+                continue
             if prices is None:
                 cost.append({"field": "stud_len", "status": "unpriced: no price table supplied"})
+                continue
+            if not (b.status.get("material") or "").startswith("FOUND") or not (a.status.get("material") or "").startswith("FOUND"):
+                cost.append({"field": "stud_len", "status": "unpriced: material not read on one or both sheets"})
                 continue
             both_diam = (a.status.get("diameter") or "").startswith("FOUND") and (b.status.get("diameter") or "").startswith("FOUND")
             if not both_diam or a.values.get("diameter") != b.values.get("diameter"):
@@ -330,12 +343,21 @@ def run(old_pdf, new_pdf, bom_csv, quotes_csv, part_no, out_dir, prices_csv=None
             cost.append({"field": "stud_len",
                          **_cd.stud_length_delta(ch, qty, b.values.get("diameter"), prices, b.values.get("material"))})
     import heat_check as _hc
+    material_unread = "material" in {u["field"] for u in unchecked}
+    heat_error = None
     if heat_certs_csv:
-        heat = _hc.check(changes, _hc.load_certs(heat_certs_csv), part_no)
+        try:
+            heat = _hc.check(changes, _hc.load_certs(heat_certs_csv), part_no)
+        except (OSError, UnicodeDecodeError, ValueError, csv.Error) as e:
+            heat, heat_error = "not run: cert file unreadable (" + str(e) + ")", None
     elif any(c["field"] == "material" for c in changes):
         heat = "not run: no heat-cert file supplied"
     else:
         heat = []
+    if material_unread:
+        row = {"piece_mark": None, "heat_no": None, "cert_material": None, "old": None, "new": None,
+               "status": "UNCHECKED", "note": "material not read on one or both sheets"}
+        heat = ([] if isinstance(heat, str) else list(heat)) + [row]
     for ch in changes:
         ch["loc_old"] = locate(old_pdf, ch["old"])
         ch["loc_new"] = locate(new_pdf, ch["new"])

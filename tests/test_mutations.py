@@ -24,9 +24,6 @@ MUTATIONS = {
     "nut": {"nut": "A194 7"},
     "coating": {"coating": "PTFE"},
 }
-FIELD_OF = {"stud_len": "stud_len", "material": "material", "holes": "holes", "qty": "qty",
-            "diameter": "diameter", "thread": "thread", "spec_note": "spec_note",
-            "tubing_grade": "tubing_grade", "nut": "nut", "coating": "coating"}
 
 
 class Mutations(unittest.TestCase):
@@ -50,13 +47,7 @@ class Mutations(unittest.TestCase):
     def test_each_mutation_is_reported_as_a_change(self):
         for name in MUTATIONS:
             changes, _ = self.results[name]
-            self.assertIn(FIELD_OF[name], [c["field"] for c in changes], name)
-
-    def test_no_silent_miss_on_mutations(self):
-        for name in MUTATIONS:
-            changes, unchecked = self.results[name]
-            seen = {c["field"] for c in changes} | {u["field"] for u in unchecked}
-            self.assertIn(FIELD_OF[name], seen, f"{name}: silently missed")
+            self.assertIn(name, [c["field"] for c in changes], name)
 
     def test_no_change_pair_reports_no_change(self):
         changes, _ = self.results["no_change"]
