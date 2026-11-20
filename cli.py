@@ -19,10 +19,13 @@ def main(argv=None):
     p.add_argument("--part", required=True, help="BOM part number to price")
     p.add_argument("--out", default="out_run")
     p.add_argument("--vendor", default=None, help="show the total for one vendor only")
+    p.add_argument("--prices", default=None, help="price table CSV (material, usd_per_lb_low, usd_per_lb_high, source)")
+    p.add_argument("--certs", default=None, help="heat-cert CSV (part_no, piece_mark, heat_no, cert_material)")
     p.add_argument("--history", action="store_true", help="save this run to revisions.sqlite (local only)")
     args = p.parse_args(argv)
     try:
-        s = run(args.old_pdf, args.new_pdf, args.bom_csv, args.quotes_csv, args.part, args.out)
+        s = run(args.old_pdf, args.new_pdf, args.bom_csv, args.quotes_csv, args.part, args.out,
+                prices_csv=args.prices, heat_certs_csv=args.certs)
     except FileNotFoundError as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 2
@@ -36,6 +39,8 @@ def main(argv=None):
     print("priced exposure, one vendor at a time (vendors are not summed):")
     for vendor, amt in s["priced_exposure_by_vendor_usd"].items():
         print(f"  {vendor}: ${amt}")
+    hc = s["heat_cert"]
+    print(f"heat cert: {hc if isinstance(hc, str) else ('none' if not hc else [r['status'] for r in hc])}")
     print(f"raster boxes: {s['raster_boxes']}  shift px: {s['raster_shift_px']}")
     if args.vendor:
         amt = s["priced_exposure_by_vendor_usd"].get(args.vendor)

@@ -42,6 +42,8 @@ button{{padding:9px 18px;font-size:15px;margin-right:8px}}</style></head><body>
 <div>New drawing (PDF): <input type="file" name="new" accept=".pdf" required></div>
 <div>BOM (CSV or XLSX): <input type="file" name="bom" accept=".csv,.xlsx" required></div>
 <div>Quote sheet (CSV or XLSX): <input type="file" name="quotes" accept=".csv,.xlsx" required></div>
+<div>Price table (optional CSV): <input type="file" name="prices" accept=".csv"></div>
+<div>Heat certs (optional CSV): <input type="file" name="certs" accept=".csv"></div>
 <div>Part number to price: <input type="text" name="part" value="1234-STD" required></div>
 <p><button type="submit">Run on my files</button></p></div></form>
 <form method="post" action="/sample"><p><button type="submit">Try with sample files (nothing uploaded)</button></p></form>
@@ -52,12 +54,17 @@ def _run_and_zip(paths, part):
     work = tempfile.mkdtemp(prefix="revimpact_")
     try:
         out = os.path.join(work, "out")
-        s = impact.run(paths["old"], paths["new"], paths["bom"], paths["quotes"], part, out)
+        s = impact.run(paths["old"], paths["new"], paths["bom"], paths["quotes"], part, out,
+                       prices_csv=paths.get("prices"), heat_certs_csv=paths.get("certs"))
         summary = [f"Changes: {s['changes']}", f"Unpriced rows: {s['unpriced_rows']}",
                    "Priced exposure per vendor (not added together):"]
         summary += [f"  {v}: ${a:.2f}" for v, a in s["priced_exposure_by_vendor_usd"].items()]
         summary += ["", "UNCHECKED (could not read on one side, NOT 'no change'):"]
         summary += [f"  {u['field']}: rev A {u['rev_A']}, rev B {u['rev_B']}" for u in s["unchecked_fields"]] or ["  none"]
+        summary += ["", "Stud length cost (material only):"]
+        summary += [f"  {c.get('status', c)}" for c in s["cost_delta"]] or ["  no stud length change"]
+        hc = s["heat_cert"]
+        summary += ["", "Heat certs: " + (hc if isinstance(hc, str) else ("none" if not hc else ", ".join(f"{r['piece_mark']}={r['status']}" for r in hc)))]
         summary += ["", "Revision check (quote vs new drawing revision):"]
         summary += [f"  {g['vendor']}: {g['status']} ({g['detail']})" for g in s["rev_guard"]] or ["  none"]
         summary += ["", "Policy: " + POLICY]
@@ -84,12 +91,14 @@ def run():
     work = tempfile.mkdtemp(prefix="revimpact_in_")
     try:
         paths = {}
-        for key in ("old", "new", "bom", "quotes"):
+        for key in ("old", "new", "bom", "quotes", "prices", "certs"):
             f = request.files.get(key)
             if not f or not f.filename:
+                if key in ("prices", "certs"):
+                    continue
                 abort(400, f"missing {key}")
             ext = os.path.splitext(f.filename)[1].lower()
-            if ext not in (".pdf", ".csv", ".xlsx"):
+            if ext not in ((".csv",) if key in ("prices", "certs") else (".pdf", ".csv", ".xlsx")):
                 abort(400, f"unsupported file type for {key}")
             p = os.path.join(work, f"{key}{ext}")
             f.save(p)

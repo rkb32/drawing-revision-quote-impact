@@ -493,7 +493,7 @@ $SKPOLY
   9
 $TDCREATE
  40
-2461364.850590278
+2461365.504976852
   9
 $TDUCREATE
  40
@@ -501,7 +501,7 @@ $TDUCREATE
   9
 $TDUPDATE
  40
-2461364.850590278
+2461365.504976852
   9
 $TDUUPDATE
  40
@@ -553,7 +553,7 @@ $SPLINESEGS
   9
 $HANDSEED
   5
-41
+45
   9
 $SURFTAB1
  70
@@ -933,11 +933,11 @@ $PSTYLEMODE
   9
 $FINGERPRINTGUID
   2
-{9BD2E041-0751-45FB-AEDA-350A31318E7C}
+{5647E864-F9AD-4B1D-B2F8-F4791F35C106}
   9
 $VERSIONGUID
   2
-{6CE4104E-7884-44D1-8E79-9D5AB927556A}
+{EC8E442B-30D1-4B5A-9B9B-4E4E7BE5449D}
   9
 $EXTNAMES
 290
@@ -1327,9 +1327,9 @@ ISM
   0
 CLASS
   1
-ACDBPLACEHOLDER
+LAYOUT
   2
-AcDbPlaceHolder
+AcDbLayout
   3
 ObjectDBX Classes
  90
@@ -1343,9 +1343,9 @@ ObjectDBX Classes
   0
 CLASS
   1
-LAYOUT
+ACDBPLACEHOLDER
   2
-AcDbLayout
+AcDbPlaceHolder
   3
 ObjectDBX Classes
  90
@@ -1705,7 +1705,7 @@ ACAD
   0
 APPID
   5
-3E
+42
 330
 3
 100
@@ -1719,7 +1719,7 @@ HATCHBACKGROUNDCOLOR
   0
 APPID
   5
-3F
+43
 330
 3
 100
@@ -2293,7 +2293,7 @@ AcDbText
  40
 0.2
   1
-NOTE 1: Deburr all edges. Finish per spec.
+Thread: 1-8 UNC-2A
  11
 1.5
  21
@@ -2306,6 +2306,126 @@ AcDbText
 TEXT
   5
 38
+330
+17
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+1.5
+ 20
+3.8
+ 30
+0.0
+ 40
+0.2
+  1
+STUDS PER SPEC ASTM A193 GR B7, nuts per spec.
+ 11
+1.5
+ 21
+3.8
+ 31
+0.0
+100
+AcDbText
+  0
+TEXT
+  5
+39
+330
+17
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+1.5
+ 20
+3.4999999999999996
+ 30
+0.0
+ 40
+0.2
+  1
+Furnish structural tubing for rails conforming to ASTM A500, Grade B.
+ 11
+1.5
+ 21
+3.4999999999999996
+ 31
+0.0
+100
+AcDbText
+  0
+TEXT
+  5
+3A
+330
+17
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+1.5
+ 20
+3.1999999999999997
+ 30
+0.0
+ 40
+0.2
+  1
+Nuts: A194 2H per spec. COATING: zinc
+ 11
+1.5
+ 21
+3.1999999999999997
+ 31
+0.0
+100
+AcDbText
+  0
+TEXT
+  5
+3B
+330
+17
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+1.5
+ 20
+2.9
+ 30
+0.0
+ 40
+0.2
+  1
+NOTE 1: Deburr all edges. Finish per spec.
+ 11
+1.5
+ 21
+2.9
+ 31
+0.0
+100
+AcDbText
+  0
+TEXT
+  5
+3C
 330
 17
 100
@@ -2335,7 +2455,7 @@ AcDbText
   0
 TEXT
   5
-39
+3D
 330
 17
 100
@@ -2365,7 +2485,7 @@ AcDbText
   0
 TEXT
   5
-3A
+3E
 330
 17
 100
@@ -2395,7 +2515,7 @@ AcDbText
   0
 TEXT
   5
-3B
+3F
 330
 17
 100
@@ -2425,7 +2545,7 @@ AcDbText
   0
 TEXT
   5
-3C
+40
 330
 17
 100
@@ -2455,7 +2575,7 @@ AcDbText
   0
 TEXT
   5
-3D
+41
 330
 17
 100
@@ -3473,7 +3593,7 @@ CREATED_BY_EZDXF
   3
 WRITTEN_BY_EZDXF
 350
-40
+44
   0
 DICTIONARYVAR
   5
@@ -3485,11 +3605,11 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-20T02:24:51.018019+00:00
+1.4.5 @ 2026-11-20T18:07:10.567848+00:00
   0
 DICTIONARYVAR
   5
-40
+44
 330
 2D
 100
@@ -3497,7 +3617,7 @@ DictionaryVariables
 280
 0
   1
-1.4.5 @ 2026-11-20T02:24:51.019482+00:00
+1.4.5 @ 2026-11-20T18:07:10.572841+00:00
   0
 ENDSEC
   0

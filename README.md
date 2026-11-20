@@ -2,25 +2,54 @@
 
 **Prototype. Tested only on synthetic drawings. Not validated on real customer drawings.**
 
-Given an old and new drawing PDF, a BOM, and a vendor quote sheet, it:
+Give it an old and a new drawing PDF, a BOM, and a vendor quote sheet. It tells you which quote lines a revision makes stale, and it never says "no change" for a field it could not read.
 
-- reads about a dozen fields from text, OCR'd scans and rotated sheets
-- diffs the fields and cross-checks the revision block
-- maps each change to BOM and quote lines and computes per-vendor exposure (vendors are never summed)
-- flags changes it cannot price, and fields it cannot read (UNCHECKED, never "no change")
-- draws boxes on changed regions and writes an Excel sheet
-- drafts vendor reconfirm emails (drafts only, nothing is sent)
+## What it does
 
-It does not price engineering time or material cost, and it does not parse real GD&T frames.
+- Reads 14 fields from text, OCR'd scans and rotated sheets: stud length, thread, material, spec note, holes, quantity, diameter, nut, coating, tubing grade, NACE, tolerances, GD&T, general tolerance.
+- Diffs the fields and cross-checks them against the revision block.
+- Maps each change to BOM and quote lines and computes exposure per vendor. Vendors are never added together.
+- Estimates material-only cost for a stud length change, from a price table you supply.
+- Checks mill heat certs against a changed material, from a CSV you supply (RE-CERTIFY / OK / UNCHECKED).
+- Draws boxes on changed regions and writes an Excel sheet, a markup PDF and a change-order draft.
+- Drafts vendor reconfirm emails. Nothing is sent.
 
-## Run
+It does not read mill cert PDFs, price vendor markup or labor, or check that a quote is current.
+
+## Run it
+
+Command line:
 
 ```
 python cli.py old.pdf new.pdf bom.csv quotes.csv --part 1234-STD --out out_run
 ```
 
-Tests: `python -m unittest discover -s tests`
+Optional: `--prices prices.csv` (material price table) and `--certs certs.csv` (heat certs).
+
+Batch (one folder of `old.pdf` / `new.pdf` pairs):
+
+```
+python batch.py ROOT bom.csv quotes.csv --part 1234-STD --out out_batch
+```
+
+Web app (local):
+
+```
+python hosted_app.py
+```
+
+Then open http://127.0.0.1:8080. It accepts optional price and cert CSVs. It keeps no files after it returns results.
+
+Sample page: [site/index.html](site/index.html) (synthetic data).
+
+## Tests
+
+```
+python -m unittest discover -s tests
+```
+
+Tests use synthetic drawings only. Seeded single-field mutations are in `tests/test_mutations.py`.
 
 ## Status
 
-See `DECISION.md`. No accuracy number exists yet.
+See `DECISION.md`. No accuracy number exists yet. The next step is a real drawing pair with a known outcome.

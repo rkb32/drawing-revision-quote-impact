@@ -12,9 +12,11 @@ OUT = "samples_cad"
 
 REV = {
     "A": {"stud_len": "4.00 in", "material": "A193 B7", "qty": "24", "holes": "8",
-          "diameter": "1.125 in"},
+          "diameter": "1.125 in", "thread": "1-8 UNC-2A", "spec": "ASTM A193 GR B7",
+          "grade": "Grade B", "nut": "A194 2H", "coating": "zinc"},
     "B": {"stud_len": "5.00 in", "material": "A320 L7", "qty": "24", "holes": "12",
-          "diameter": "1.125 in"},
+          "diameter": "1.125 in", "thread": "1-8 UNC-2A", "spec": "ASTM A193 GR B7",
+          "grade": "Grade B or C", "nut": "A194 2H", "coating": "zinc"},
 }
 
 
@@ -26,7 +28,11 @@ def build_dxf(rev, d, path):
     msp.add_lwpolyline([(1.5, 6.0), (5.5, 6.0), (5.5, 6.5), (1.5, 6.5), (1.5, 6.0)])
     lines = [f"Stud length: {d['stud_len']}", f"Hole count: {d['holes']} x 0.25 in dia",
              f"Quantity per assembly: {d['qty']}", f"Material: {d['material']}",
-             f"Diameter: {d['diameter']}", "NOTE 1: Deburr all edges. Finish per spec."]
+             f"Diameter: {d['diameter']}", f"Thread: {d['thread']}",
+             f"STUDS PER SPEC {d['spec']}, nuts per spec.",
+             f"Furnish structural tubing for rails conforming to ASTM A500, {d['grade']}.",
+             f"Nuts: {d['nut']} per spec. COATING: {d['coating']}",
+             "NOTE 1: Deburr all edges. Finish per spec."]
     for i, t in enumerate(lines):
         msp.add_text(t, dxfattribs={"height": 0.2}).set_placement((1.5, 5.6 - i * 0.3))
     y = 1.6

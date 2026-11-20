@@ -34,10 +34,10 @@ def load_prices(path):
 
 def price_range(prices, material):
     """A specific material row wins over the '*' fallback, whatever the file order."""
-    m = (material or "").lower()
+    m = " ".join((material or "").split()).lower()
     specific = [r for r in prices if r["material"].strip().lower() not in ("", "*")]
     fallback = [r for r in prices if r["material"].strip() == "*"]
-    for r in [r for r in specific if r["material"].strip().lower() in m] + fallback:
+    for r in [r for r in specific if " ".join(r["material"].split()).lower() == m] + fallback:
         try:
             return float(r["usd_per_lb_low"]), float(r["usd_per_lb_high"]), r["source"]
         except (TypeError, ValueError):

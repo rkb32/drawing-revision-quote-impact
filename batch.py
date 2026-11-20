@@ -22,7 +22,7 @@ def find_jobs(root):
     return jobs
 
 
-def run_batch(root, bom_csv, quotes_csv, part_no, out_root):
+def run_batch(root, bom_csv, quotes_csv, part_no, out_root, prices_csv=None, heat_certs_csv=None):
     jobs = find_jobs(root)
     if not jobs:
         raise FileNotFoundError(f"no job folders with old.pdf and new.pdf under {root}")
@@ -30,7 +30,8 @@ def run_batch(root, bom_csv, quotes_csv, part_no, out_root):
     lines = []
     for name, old, new in jobs:
         try:
-            s = run(old, new, bom_csv, quotes_csv, part_no, os.path.join(out_root, name))
+            s = run(old, new, bom_csv, quotes_csv, part_no, os.path.join(out_root, name),
+                    prices_csv=prices_csv, heat_certs_csv=heat_certs_csv)
             lines.append({"job": name, "status": "ok", "changes": s["changes"],
                           "unpriced_rows": s["unpriced_rows"],
                           "unchecked": len(s["unchecked_fields"]),
@@ -55,9 +56,12 @@ def main(argv=None):
     p.add_argument("quotes_csv")
     p.add_argument("--part", required=True)
     p.add_argument("--out", default="out_batch")
+    p.add_argument("--prices", default=None)
+    p.add_argument("--certs", default=None)
     args = p.parse_args(argv)
     try:
-        path, lines = run_batch(args.root, args.bom_csv, args.quotes_csv, args.part, args.out)
+        path, lines = run_batch(args.root, args.bom_csv, args.quotes_csv, args.part, args.out,
+                                 prices_csv=args.prices, heat_certs_csv=args.certs)
     except FileNotFoundError as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 2

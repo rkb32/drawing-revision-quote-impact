@@ -35,5 +35,10 @@ class HeatCheck(unittest.TestCase):
         self.assertEqual(hc.check([{"field": "holes", "old": "8", "new": "12"}], CERTS, "1234-STD"), [])
 
 
+    def test_material_change_with_no_cert_rows_is_unchecked_not_silent(self):
+        rows = hc.check(CHANGE, [], "1234-STD")
+        self.assertEqual([r["status"] for r in rows], ["UNCHECKED"])
+
+
 if __name__ == "__main__":
     unittest.main()

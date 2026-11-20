@@ -304,29 +304,38 @@ def write_xlsx(path, rows, unchecked, total, boxes_count, shift):
     wb.save(path)
 
 
-def run(old_pdf, new_pdf, bom_csv, quotes_csv, part_no, out_dir, prices_csv=None):
+def run(old_pdf, new_pdf, bom_csv, quotes_csv, part_no, out_dir, prices_csv=None, heat_certs_csv=None):
     os.makedirs(out_dir, exist_ok=True)
     a, b = extract(old_pdf), extract(new_pdf)
     changes, unchecked = diff(a, b)
+    import cost_delta as _cd
+    bom_line = next((r for r in load_csv(bom_csv) if r["part_no"] == part_no), None)
+    qty = int(bom_line.get("qty", "")) if bom_line and str(bom_line.get("qty", "")).strip().isdigit() else None
+    prices = _cd.load_prices(prices_csv) if prices_csv else None
     cost = []
-    if prices_csv:
-        import cost_delta as _cd
-        bom_line = next((r for r in load_csv(bom_csv) if r["part_no"] == part_no), None)
-        qty = int(bom_line.get("qty", "")) if bom_line and str(bom_line.get("qty", "")).strip().isdigit() else None
-        prices = _cd.load_prices(prices_csv)
-        stud_read_any = (a.status.get("stud_len") or "").startswith("FOUND") or (b.status.get("stud_len") or "").startswith("FOUND")
-        if "stud_len" in {u["field"] for u in unchecked} and stud_read_any:
-            cost.append({"field": "stud_len", "status": "unpriced: stud length not read on both sheets"})
-        for ch in changes:
-            if ch["field"] == "stud_len":
-                both_diam = (a.status.get("diameter") or "").startswith("FOUND") and (b.status.get("diameter") or "").startswith("FOUND")
-                if not both_diam or a.values.get("diameter") != b.values.get("diameter"):
-                    why = ("diameter changed too (weight change not computed)" if both_diam
-                           else "stud diameter not read on both sheets")
-                    cost.append({"field": "stud_len", "status": "unpriced: " + why})
-                    continue
-                cost.append({"field": "stud_len",
-                             **_cd.stud_length_delta(ch, qty, b.values.get("diameter"), prices, b.values.get("material"))})
+    # Every cost outcome is a row, never silent: unread, no price table, or priced.
+    if "stud_len" in {u["field"] for u in unchecked}:
+        cost.append({"field": "stud_len", "status": "unpriced: stud length not read on both sheets"})
+    for ch in changes:
+        if ch["field"] == "stud_len":
+            if prices is None:
+                cost.append({"field": "stud_len", "status": "unpriced: no price table supplied"})
+                continue
+            both_diam = (a.status.get("diameter") or "").startswith("FOUND") and (b.status.get("diameter") or "").startswith("FOUND")
+            if not both_diam or a.values.get("diameter") != b.values.get("diameter"):
+                why = ("diameter changed too (weight change not computed)" if both_diam
+                       else "stud diameter not read on both sheets")
+                cost.append({"field": "stud_len", "status": "unpriced: " + why})
+                continue
+            cost.append({"field": "stud_len",
+                         **_cd.stud_length_delta(ch, qty, b.values.get("diameter"), prices, b.values.get("material"))})
+    import heat_check as _hc
+    if heat_certs_csv:
+        heat = _hc.check(changes, _hc.load_certs(heat_certs_csv), part_no)
+    elif any(c["field"] == "material" for c in changes):
+        heat = "not run: no heat-cert file supplied"
+    else:
+        heat = []
     for ch in changes:
         ch["loc_old"] = locate(old_pdf, ch["old"])
         ch["loc_new"] = locate(new_pdf, ch["new"])
@@ -371,6 +380,7 @@ def run(old_pdf, new_pdf, bom_csv, quotes_csv, part_no, out_dir, prices_csv=None
         "raster_boxes": len(boxes),
         "raster_shift_px": shift,
         "cost_delta": cost,
+        "heat_cert": heat,
         "rows": rows,
     }
     with open(os.path.join(out_dir, "summary.json"), "w", encoding="utf-8") as f:
