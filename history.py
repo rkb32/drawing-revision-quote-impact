@@ -39,3 +39,36 @@ def history(part, path=DB):
     c.close()
     return [{"old_rev": o, "new_rev": n, "changes": json.loads(ch), "exposure_by_vendor": json.loads(ex),
              "rev_guard": json.loads(g), "created": cr} for o, n, ch, ex, g, cr in rows]
+
+
+SCHEMA_VERSION = 1
+
+
+def to_record(summary, part, old_rev=None):
+    """One run as a plain dict. Used by the CLI sqlite log and by the web app's history file."""
+    return {
+        "part": part,
+        "old_rev": old_rev if old_rev is not None else summary.get("old_rev"),
+        "new_rev": summary.get("new_rev"),
+        "changes": [c["field"] for c in summary["changes_with_location"]],
+        "exposure_by_vendor": summary["priced_exposure_by_vendor_usd"],
+        "rev_guard": summary.get("rev_guard", []),
+        "created": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }
+
+
+def load_file(text, part):
+    """Parse an uploaded history file. Raises ValueError on wrong schema or a different part."""
+    data = json.loads(text)
+    if not isinstance(data, dict) or data.get("schema_version") != SCHEMA_VERSION:
+        raise ValueError("not a revision-history file (wrong or missing schema_version)")
+    if data.get("part") != part:
+        raise ValueError(f"this history file is for part {data.get('part')!r}, not {part!r}")
+    runs = data.get("runs")
+    if not isinstance(runs, list):
+        raise ValueError("history file has no runs list")
+    return runs
+
+
+def dump_file(runs, part):
+    return json.dumps({"schema_version": SCHEMA_VERSION, "part": part, "runs": runs}, indent=2)

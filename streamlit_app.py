@@ -229,6 +229,15 @@ def render_results(res):
             st.dataframe([{"side": "new only", "type": k[0], "layer": k[1], "count": n} for k, n in added]
                          + [{"side": "old only", "type": k[0], "layer": k[1], "count": n} for k, n in removed])
         st.caption("A moved entity shows as one removed and one added.")
+    st.subheader("Revision history for this part")
+    runs = res.get("runs") or []
+    st.caption("Exposure figures are quote prices. Keep this file with the part's job folder; it is not stored on the server.")
+    st.dataframe([{"when": r["created"], "old": r.get("old_rev"), "new": r.get("new_rev"),
+                   "changed fields": ", ".join(r["changes"]) or "none",
+                   "exposure by vendor": str(r["exposure_by_vendor"])} for r in runs])
+    if res.get("history_text"):
+        st.download_button("Download updated history file (JSON)", res["history_text"],
+                           f"history_{res.get('part', 'part')}.json", "application/json")
     st.download_button("Download results (zip)", zbytes, "revision_impact_results.zip", "application/zip")
 
 
@@ -241,6 +250,7 @@ with tab_up:
     quotes = st.file_uploader("Quote sheet (CSV or XLSX)", type=["csv", "xlsx"], on_change=_clear_result)
     prices_up = st.file_uploader("Optional: price table (CSV, for stud length cost)", type=["csv"], on_change=_clear_result)
     certs_up = st.file_uploader("Optional: heat certs (CSV)", type=["csv"], on_change=_clear_result)
+    hist_up = st.file_uploader("Optional: revision history file (JSON from a previous run)", type=["json"], on_change=_clear_result)
     part = st.text_input("Part number to price", value="1234-STD", on_change=_clear_result)
     old_dxf = st.file_uploader("Optional: old CAD file (DXF)", type=["dxf"], on_change=_clear_result)
     new_dxf = st.file_uploader("Optional: new CAD file (DXF)", type=["dxf"], on_change=_clear_result)
@@ -257,12 +267,23 @@ with tab_up:
                     fh.write(f.getbuffer())
                 paths[key] = p
             s, zbytes, overlay = run_on(paths, part.strip())
+            import history as _hist
+            runs = []
+            if hist_up is not None:
+                try:
+                    runs = _hist.load_file(hist_up.getbuffer().tobytes().decode("utf-8"), part.strip())
+                except (ValueError, UnicodeDecodeError) as e:
+                    st.error(f"History file not used: {e}. Results below are from this run only.")
+                    runs = []
+            runs = runs + [_hist.to_record(s, part.strip(), s.get("old_rev"))]
+            history_text = _hist.dump_file(runs, part.strip())
         finally:
             shutil.rmtree(work, ignore_errors=True)
         dxf_out = None
         if old_dxf and new_dxf:
             dxf_out = run_dxf(old_dxf.getbuffer().tobytes(), new_dxf.getbuffer().tobytes())
-        st.session_state["result"] = {"s": s, "zbytes": zbytes, "overlay": overlay, "dxf": dxf_out}
+        st.session_state["result"] = {"s": s, "zbytes": zbytes, "overlay": overlay, "dxf": dxf_out,
+                                      "runs": runs, "history_text": history_text, "part": part.strip()}
         st.session_state["result_source"] = "upload"
     if "result" in st.session_state and st.session_state.get("result_source") == "upload":
         render_results(st.session_state["result"])

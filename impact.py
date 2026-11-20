@@ -404,6 +404,7 @@ def run(old_pdf, new_pdf, bom_csv, quotes_csv, part_no, out_dir, prices_csv=None
         "expiry_flags": _ex.check(quote_rows, part_no),
         "rev_guard": guard,
         "new_rev": latest_rev(new_pdf),
+        "old_rev": latest_rev(old_pdf),
         "text_words_removed": removed,
         "text_words_added": added,
         "changes": len(changes),
