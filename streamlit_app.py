@@ -29,6 +29,26 @@ st.write("Upload the old and new drawing, the BOM and the quote sheet. "
          "Get back an Excel sheet, a marked-up PDF and a change-order draft.")
 st.warning(POLICY)
 
+with st.expander("How it works and how to read the results"):
+    st.graphviz_chart("""
+digraph G {
+  rankdir=LR; node [shape=box, style="rounded,filled", fillcolor="#fafaf7", fontname="Helvetica"];
+  up [label="1. Upload\nold + new PDF, BOM, quotes"];
+  read [label="2. Read fields\n(stud length, material, holes ...)"];
+  diff [label="3. Diff changes\nmatch BOM and quote lines"];
+  out [label="4. Results\nexposure per vendor\ncost and heat-cert checks"];
+  unk [label="UNCHECKED\nnot read on one side:\nNOT 'no change'", fillcolor="#fff7e6"];
+  up -> read -> diff -> out;
+  read -> unk [style=dashed];
+}
+""")
+    st.markdown(
+        "- **Changes:** a field read on both drawings that differs.\n"
+        "- **Exposure:** unit price x BOM quantity, one vendor at a time. Vendors are never added together.\n"
+        "- **UNCHECKED:** a field we could not read on one side. It is never reported as 'no change'.\n"
+        "- **Warning:** text differs outside the field rules. Review those sheets by hand.\n"
+        "- **Cost and heat certs:** only when you supply a price table or cert file.")
+
 
 def run_on(paths, part):
     """Returns (summary dict, zip bytes, overlay PNG bytes)."""
