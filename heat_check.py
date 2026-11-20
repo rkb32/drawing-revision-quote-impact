@@ -8,7 +8,7 @@ import csv
 
 
 def load_certs(path):
-    with open(path, newline="", encoding="utf-8") as f:
+    with open(path, newline="", encoding="utf-8-sig") as f:
         return list(csv.DictReader(f))
 
 
@@ -19,9 +19,12 @@ def check(changes, certs, part_no):
         return []
     old, new = (mat["old"] or "").strip().lower(), (mat["new"] or "").strip().lower()
     rows = []
-    for c in certs:
-        if c.get("part_no") != part_no:
-            continue
+    mine = [c for c in certs if c.get("part_no") == part_no]
+    if not mine:
+        # Material changed but no cert rows for this part: unreadable, never silent.
+        return [{"piece_mark": None, "heat_no": None, "cert_material": None,
+                 "old": old, "new": new, "status": "UNCHECKED"}]
+    for c in mine:
         cm = (c.get("cert_material") or "").strip().lower()
         if not cm:
             status = "UNCHECKED"

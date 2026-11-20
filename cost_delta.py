@@ -28,20 +28,20 @@ def parse_inches(s):
 
 
 def load_prices(path):
-    with open(path, newline="", encoding="utf-8") as f:
+    with open(path, newline="", encoding="utf-8-sig") as f:
         return list(csv.DictReader(f))
 
 
 def price_range(prices, material):
-    """First matching row wins. Rows are checked in file order; '*' matches any material."""
+    """A specific material row wins over the '*' fallback, whatever the file order."""
     m = (material or "").lower()
-    for r in prices:
-        key = r["material"].strip().lower()
-        if key == "*" or (key and key in m):
-            try:
-                return float(r["usd_per_lb_low"]), float(r["usd_per_lb_high"]), r["source"]
-            except (TypeError, ValueError):
-                return None
+    specific = [r for r in prices if r["material"].strip().lower() not in ("", "*")]
+    fallback = [r for r in prices if r["material"].strip() == "*"]
+    for r in [r for r in specific if r["material"].strip().lower() in m] + fallback:
+        try:
+            return float(r["usd_per_lb_low"]), float(r["usd_per_lb_high"]), r["source"]
+        except (TypeError, ValueError):
+            return None
     return None
 
 
@@ -53,8 +53,10 @@ def stud_length_delta(change, bom_qty, diameter_text, prices, material):
     d = parse_inches(diameter_text)
     if d is None:
         return {"status": "unpriced: stud diameter not read"}
-    if bom_qty is None:
-        return {"status": "unpriced: part not in BOM"}
+    if d <= 0:
+        return {"status": "unpriced: stud diameter is zero"}
+    if not bom_qty or bom_qty <= 0:
+        return {"status": "unpriced: part not in BOM or qty is zero"}
     pr = price_range(prices, material)
     if pr is None:
         return {"status": "unpriced: no price row for this material"}

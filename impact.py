@@ -211,7 +211,7 @@ def load_csv(path):
         rows = list(ws.iter_rows(values_only=True))
         header = [str(h).strip() for h in rows[0]]
         return [{h: ("" if v is None else str(v)) for h, v in zip(header, r)} for r in rows[1:] if any(r)]
-    with open(path, newline="", encoding="utf-8") as f:
+    with open(path, newline="", encoding="utf-8-sig") as f:
         return list(csv.DictReader(f))
 
 
@@ -319,8 +319,11 @@ def run(old_pdf, new_pdf, bom_csv, quotes_csv, part_no, out_dir, prices_csv=None
             cost.append({"field": "stud_len", "status": "unpriced: stud length not read on both sheets"})
         for ch in changes:
             if ch["field"] == "stud_len":
-                if a.values.get("diameter") != b.values.get("diameter"):
-                    cost.append({"field": "stud_len", "status": "unpriced: diameter changed too (weight change not computed)"})
+                both_diam = (a.status.get("diameter") or "").startswith("FOUND") and (b.status.get("diameter") or "").startswith("FOUND")
+                if not both_diam or a.values.get("diameter") != b.values.get("diameter"):
+                    why = ("diameter changed too (weight change not computed)" if both_diam
+                           else "stud diameter not read on both sheets")
+                    cost.append({"field": "stud_len", "status": "unpriced: " + why})
                     continue
                 cost.append({"field": "stud_len",
                              **_cd.stud_length_delta(ch, qty, b.values.get("diameter"), prices, b.values.get("material"))})

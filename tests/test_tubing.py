@@ -8,7 +8,8 @@ import unittest
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, HERE)
 
-PATTERN = json.load(open(os.path.join(HERE, "rules.json"), encoding="utf-8"))["fields"]["tubing_grade"]["pattern"]
+with open(os.path.join(HERE, "rules.json"), encoding="utf-8") as _f:
+    PATTERN = json.load(_f)["fields"]["tubing_grade"]["pattern"]
 
 OLD_INTERLEAVED = "Grade B.  Paint all metal components\nFurnish structural tubing for rails conforming to ASTM A500,\n"
 NEW_INTERLEAVED = "Grade B or C.  Paint all metal components\nProvide structural tubing for rails conforming to ASTM A500,\n"

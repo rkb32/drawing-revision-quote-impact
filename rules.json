@@ -31,7 +31,7 @@
       "reason": "Quantity change moves the price break."
     },
     "diameter": {
-      "pattern": "(?m)^\\s*Diameter:\\s*([^\n]+)",
+      "pattern": "(?m)^[ \\t]*Diameter:[ \\t]*([^\n]+)",
       "action": "Requote",
       "reason": "Stud diameter change means different stock and thread tooling."
     },

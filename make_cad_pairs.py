@@ -4,9 +4,9 @@ Synthetic values only, same fields as make_samples.py. Output: samples_cad/."""
 import os
 
 import ezdxf
-import matplotlib.pyplot as plt
-from ezdxf.addons.drawing import Frontend, RenderContext
-from ezdxf.addons.drawing.matplotlib import MatplotlibBackend
+
+
+
 
 OUT = "samples_cad"
 

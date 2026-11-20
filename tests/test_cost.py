@@ -55,7 +55,7 @@ class StudLengthDelta(unittest.TestCase):
 
     def test_missing_bom_unpriced(self):
         r = cd.stud_length_delta({"old": "4", "new": "5"}, None, "1 in", PRICES, "x")
-        self.assertEqual(r["status"], "unpriced: part not in BOM")
+        self.assertEqual(r["status"], "unpriced: part not in BOM or qty is zero")
 
     def test_no_price_row_unpriced(self):
         r = cd.stud_length_delta({"old": "4", "new": "5"}, 2, "1 in", [], "x")
