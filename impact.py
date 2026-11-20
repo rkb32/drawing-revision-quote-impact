@@ -59,16 +59,28 @@ def _ocr_text(pdf_path):
 def page_text(pdf_path):
     # PyMuPDF reads rotated pages in reading order; pdfplumber returns rotated text reversed.
     doc = pymupdf.open(pdf_path)
-    text = "\n".join(pg.get_text() for pg in doc)
-    if text.strip():
-        return text, False
-    return _ocr_text(pdf_path)
+    return "\n".join(pg.get_text() for pg in doc), False
+
+
+_DIM = re.compile(r"\d+\.\d+|\d+/\d+|\d+[\"']")
+_CORE = ("stud_len", "material", "holes", "qty")
 
 
 def extract(pdf_path):
+    text, _ = page_text(pdf_path)
+    out = _read(text, "")
+    # OCR only when the text layer is thin AND the core fields were not found. Digital sheets
+    # skip OCR entirely; a sheet whose dimensions are outlines gets OCR and is marked "(OCR)".
+    thin = len(_DIM.findall(text)) < 10
+    missing = any(not out.status.get(f, "").startswith("FOUND") for f in _CORE)
+    if thin and missing:
+        ocr, _ = _ocr_text(pdf_path)
+        out = _read(text + "\n" + ocr, " (OCR)")
+    return out
+
+
+def _read(text, suffix):
     out = Extract()
-    text, used_ocr = page_text(pdf_path)
-    suffix = " (OCR)" if used_ocr else ""
     if not text.strip():
         for name in RULES["fields"]:
             out.values[name] = None
